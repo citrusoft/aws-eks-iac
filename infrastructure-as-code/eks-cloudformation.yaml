@@ -4,16 +4,17 @@
   Parameters:
     EKSClusterName:
       Type: String
-      Default: EKS
+      Default: estimator-cluster
       Description: The desired name of your AWS EKS Cluster.
     
     EKSVersion:
       Type: String
-      Default: 1.18
+      Default: "1.30"
       AllowedValues: 
         - 1.16
         - 1.17
         - 1.18
+        - "1.30"
       Description: The desired version of your AWS EKS Cluster.
     
     EKSNodeGroupName:
@@ -26,7 +27,7 @@
       Default: 2
       Description: Number of desired Worker Node.
       MinValue: 1
-      MaxValue: 7
+      MaxValue: 3
   
     EKSWorkerNodeInstanceType:
       Type: String
@@ -44,12 +45,12 @@
   
     EKSIAMRoleName:
       Type: String
-      Default: EKSClusterRole
+      Default: EKSEstimatorClusterRole
       Description: The name of the IAM role for the EKS service to assume.
     
     EKSKeyPair:
       Type: "AWS::EC2::KeyPair::KeyName"
-      Default: "my-eks-key"
+      Default: "tahunt"
       Description: The name of Key Pair to etasblish connection with Worker Node.
     
     VpcBlock:
@@ -75,12 +76,12 @@
   
     AvailabilityZonePublicSubnet01:
       Type: CommaDelimitedList<AWS::EC2::AvailabilityZone::Name>
-      Default: eu-west-3a
+      Default: us-east-2a
       Description: Availability Zone for the Public Subnet 01. 
 
     AvailabilityZonePublicSubnet02:
       Type: CommaDelimitedList<AWS::EC2::AvailabilityZone::Name>
-      Default: eu-west-3b
+      Default: us-east-2b
       Description: Availability Zone for the Public Subnet 02.
   
   Metadata:
@@ -128,7 +129,7 @@
           - Key: Name
             Value: !Sub '${AWS::StackName}-VPC'
           - Key: Project
-            Value: aws-eks
+            Value: eks-estimator
   
     eksInternetGateway:
       Type: AWS::EC2::InternetGateway
@@ -137,7 +138,7 @@
           - Key: Name
             Value: !Sub '${AWS::StackName}-InternetGateway'
           - Key: Project
-            Value: aws-eks
+            Value: eks-estimator
       
     eksVPCGatewayAttachment:
       Type: AWS::EC2::VPCGatewayAttachment
@@ -153,8 +154,8 @@
           - Key: Name
             Value: !Sub '${AWS::StackName}-RouteTable'
           - Key: Project
-            Value: aws-eks
-  
+            Value: eks-estimator
+
     eksPublicRoute:
       DependsOn: eksVPCGatewayAttachment
       Type: AWS::EC2::Route
@@ -162,7 +163,7 @@
         RouteTableId: !Ref eksPublicRouteTable
         DestinationCidrBlock: 0.0.0.0/0
         GatewayId: !Ref eksInternetGateway
-  
+
     eksPublicSubnet01:
       Type: AWS::EC2::Subnet
       Properties:
@@ -176,8 +177,8 @@
           - Key: Name
             Value: !Sub "${AWS::StackName}-PublicSubnet01"
           - Key: Project
-            Value: aws-eks
-      
+            Value: eks-estimator
+   
     eksPublicSubnet02:
       Type: AWS::EC2::Subnet
       Properties:
@@ -191,7 +192,7 @@
           - Key: Name
             Value: !Sub "${AWS::StackName}-PublicSubnet02"
           - Key: Project
-            Value: aws-eks
+            Value: eks-estimator
     
     eksPublicSubnet01RouteTableAssociation:
       Type: AWS::EC2::SubnetRouteTableAssociation
@@ -214,7 +215,7 @@
           - Key: Name
             Value: !Sub "${AWS::StackName}-SecurityGroup"
           - Key: Project
-            Value: aws-eks
+            Value: eks-estimator
   
     eksIAMRole:
       Type: AWS::IAM::Role
@@ -263,6 +264,7 @@
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKSWorkerNodePolicy"
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKS_CNI_Policy"
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
         Path: /
   
     eksNodeGroup:
